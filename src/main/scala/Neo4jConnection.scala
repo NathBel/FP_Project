@@ -1,6 +1,6 @@
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
-class Neo4jConnection {
+object Neo4jConnection {
     def main(args: Array[String]): Unit = {
       // Replace with the actual connection URI and credentials
       val url = "neo4j://localhost:7687"
@@ -17,20 +17,23 @@ class Neo4jConnection {
         .master("local[*]")
         .getOrCreate()
 
-      val data = spark.read.json("data/example.json")
+      val data2023 = spark.read.json("nvdcve-1.1-2023.json")
+      val data2024 = spark.read.json("nvdcve-1.1-2024.json")
 
       // Write to Neo4j
-      data.write
+      data2023.write
         .format("org.neo4j.spark.DataSource")
         .mode(SaveMode.Overwrite)
-        .option("labels", "Person")
-        .option("node.keys", "name,surname")
+        .save()
+
+      data2024.write
+        .format("org.neo4j.spark.DataSource")
+        .mode(SaveMode.Overwrite)
         .save()
 
       // Read from Neo4j
       val ds = spark.read
         .format("org.neo4j.spark.DataSource")
-        .option("labels", "Person")
         .load()
 
       ds.show()
