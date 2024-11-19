@@ -3,3 +3,7 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+#JSON files
+nvdcve-1.1-2023.json
+nvdcve-1.1-2024.json
