@@ -7,5 +7,20 @@ lazy val root = (project in file("."))
     name := "FP_Project"
   )
 
-libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.5.3"
-libraryDependencies += "org.neo4j" %% "neo4j-connector-apache-spark" % "5.3.1_for_spark_3"
+libraryDependencies ++= Seq(
+  "org.mongodb.scala" %% "mongo-scala-driver" % "4.8.0",
+  "org.neo4j.driver" % "neo4j-java-driver" % "5.11.0",
+  "org.apache.spark" %% "spark-core" % "3.5.0",
+  "org.apache.spark" %% "spark-sql" % "3.5.0",
+  "org.mongodb.spark" %% "mongo-spark-connector" % "10.1.0",
+)
+
+Compile / run / fork := true
+
+javaOptions ++= Seq(
+  "--add-exports", "java.base/sun.nio.ch=ALL-UNNAMED",
+  "--add-opens", "java.base/java.nio=ALL-UNNAMED",
+  "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED",
+  "--add-opens", "java.base/java.util=ALL-UNNAMED",
+  "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+)

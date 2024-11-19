@@ -1,29 +1,40 @@
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types._
 import org.mongodb.scala._
-import org.neo4j.driver._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main extends App {
 
   // Initialize Spark
   val spark = SparkSession.builder()
-  .appName("ScalaProject")
-  .master("local[*]")
-  .getOrCreate()
+    .appName("ScalaProject")
+    .master("local[*]")
+    .getOrCreate()
   import spark.implicits._
-  
-  // 1. Load JSON from NIST (Only 2023 for now)
+
+  // 1. Define schema for JSON data
+  val schema = StructType(Seq(
+    StructField("id", StringType, true),
+    StructField("description", StringType, true),
+    StructField("impactScore", DoubleType, true),
+    StructField("year", IntegerType, true)
+  ))
+
+  // 2. Load JSON from NIST
   val jsonFile = "nvdcve-1.1-2023.json"
-  val rawData = spark.read.json(jsonFile)
-  
-  // 2. Connect to MongoDB Atlas
-  //   val MONGO_URI: String = sys.env.get("MONGODB_URI")
-  //     .getOrElse(throw new RuntimeException("MONGODB_URI environment variable not set"))
+  val rawData = spark.read.schema(schema)
+    .option("mode", "PERMISSIVE") // Handle corrupted records
+    .json(jsonFile)
+
+  // Show loaded data for verification
+  rawData.show()
+
+  // 3. Connect to MongoDB Atlas
   val mongoClient: MongoClient = MongoClient("mongodb+srv://bellusnathan:oLkTmo78dn4cXjJK@cluster0.pe4iy.mongodb.net/?retryWrites=true&w=majority")
   val database: MongoDatabase = mongoClient.getDatabase("Cluster0")
   val collection: MongoCollection[Document] = database.getCollection("myCollection")
 
-  // 3. Write data to MongoDB Atlas
+  // 4. Write data to MongoDB Atlas
   rawData.collect().foreach { row =>
     val document = Document(
       "id" -> row.getAs[String]("id"),
@@ -38,8 +49,11 @@ object Main extends App {
     }
   }
 
-  // 4. Read data from MongoDB into Spark DataFrame
-  val df = spark.read.format("mongodb").option("uri", "mongodb+srv://bellusnathan:oLkTmo78dn4cXjJK@cluster0.pe4iy.mongodb.net/?retryWrites=true&w=majority/Cluster0.myCollection").load()
+  // 5. Read data from MongoDB into Spark DataFrame
+  val df = spark.read.format("mongodb")
+    .option("uri", "mongodb+srv://bellusnathan:oLkTmo78dn4cXjJK@cluster0.pe4iy.mongodb.net/?retryWrites=true&w=majority/Cluster0.myCollection")
+    .load()
+
   df.show()
 
   // Close resources
